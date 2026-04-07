@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self';"/>
+<meta http-equiv="X-Frame-Options" content="DENY"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Montana 2026 Election Tracker &mdash; Knight Solutions</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:wght@300;400;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer"/>
@@ -572,7 +575,7 @@ nav{background:var(--pg);border-bottom:1px solid var(--bm2);padding:0 2rem;}
 </div>
 <div class="panel" id="panel-ballot">
 <div class="sh2"><div class="st">2026 Proposed Ballot Issues</div>
-<a href="https://sosmt.gov/elections/ballot_issues/proposed-2026-ballot-issues/" target="_blank" style="font-family:IBM Plex Mono,monospace;font-size:.62rem;color:var(--bm);text-decoration:none;">MT Secretary of State &#8599;</a></div>
+<a href="https://sosmt.gov/elections/ballot_issues/proposed-2026-ballot-issues/" target="_blank" rel="noopener noreferrer" style="font-family:IBM Plex Mono,monospace;font-size:.62rem;color:var(--bm);text-decoration:none;">MT Secretary of State &#8599;</a></div>
 <div class="nbox">Citizen initiatives need 5% of qualified voters (statute) or 10% (constitutional amendment) statewide. Qualifying issues must still gather sufficient verified signatures.</div>
 <div style="margin-bottom:1rem;"><div class="st-sm" style="color:var(--gn);">&#10003; Approved for Signature Gathering</div></div>
 <div class="bic ap"><span class="bin">CI-129 &middot; Ballot Issue #1</span>
@@ -648,6 +651,9 @@ nav{background:var(--pg);border-bottom:1px solid var(--bm2);padding:0 2rem;}
 
 
 
+
+
+
 'use strict';
 
 
@@ -673,6 +679,17 @@ function safeUrl(url) {
   // Must start with http:// or https:// (case-insensitive)
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return '#';
+}
+
+/** onclickSafeUrl(url) — encodes URL for safe use inside onclick='...' attributes. */
+function onclickSafeUrl(url) {
+  if (!url) return '';
+  return String(url)
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g,  "\\'");
 }
 
 // ── Logging helpers ──
@@ -1765,12 +1782,12 @@ function renderNewsUI(articles) {
     html += '<div style="flex:1;">';
     html += '<div class="ntit">'
       + (top.url
-        ? '<a href="' + safeUrl(top.url) + '" target="_blank" onclick="trackClick(\'' + (top.url||'').replace(/'/g,"\\'") + '\')" '
+        ? '<a href="' + safeUrl(top.url) + '" target="_blank" onclick="trackClick(\'' + onclickSafeUrl(top.url) + '\')" '
           + 'style="color:var(--bd);text-decoration:none;">' + escapeHtml(top.title || '') + ' &#8599;</a>'
         : escapeHtml(top.title || ''))
       + '</div>';
     if (top.summary) {
-      html += '<div style="font-size:.72rem;color:var(--ts);margin:.15rem 0;">' + top.summary + '</div>';
+      html += '<div style="font-size:.72rem;color:var(--ts);margin:.15rem 0;">' + escapeHtml(top.summary || '') + '</div>';
     }
     html += '<div class="nme">' + escapeHtml(top.date || '');
     // Candidate tags
@@ -1800,7 +1817,7 @@ function renderNewsUI(articles) {
         html += '<div style="padding:.35rem 0;border-bottom:1px solid rgba(90,46,14,.05);">';
         html += '<div style="font-size:.78rem;">'
           + (rel.url
-            ? '<a href="' + safeUrl(rel.url) + '" target="_blank" onclick="trackClick(\'' + (rel.url||'').replace(/'/g,"\\'") + '\')" '
+            ? '<a href="' + safeUrl(rel.url) + '" target="_blank" onclick="trackClick(\'' + onclickSafeUrl(rel.url) + '\')" '
               + 'style="color:var(--bm);text-decoration:none;">' + escapeHtml(rel.title || '') + ' &#8599;</a>'
             : escapeHtml(rel.title || ''))
           + '</div>';
@@ -1863,7 +1880,7 @@ function renderCandidateCards(articles) {
       html += '<div class="cc-news-item">';
       html += '<span style="font-family:IBM Plex Mono,monospace;font-size:.55rem;color:var(--td);">' + escapeHtml(a.date || '') + '</span> &middot; ';
       html += a.url
-        ? '<a href="' + safeUrl(a.url) + '" target="_blank" onclick="trackClick(\'' + (a.url||'').replace(/'/g,"\\'") + '\')">'
+        ? '<a href="' + safeUrl(a.url) + '" target="_blank" onclick="trackClick(\'' + onclickSafeUrl(a.url) + '\')">'
           + escapeHtml(a.title || '') + '</a>'
         : (a.title || '');
       html += '</div>';
@@ -1890,7 +1907,7 @@ function renderPollingUI(pollingData) {
     if (p.candidates && p.candidates.length) {
       var maxP = Math.max.apply(null, p.candidates.map(function(c) { return parseFloat(c.pct) || 0; }));
       p.candidates.forEach(function(cnd) {
-        var pct = parseFloatescapeHtml(String(cnd.pct || 0)) || 0;
+        var pct = parseFloat(String(cnd.pct || 0)) || 0;
         var bw  = maxP > 0 ? Math.round(pct / maxP * 100) : 0;
         var bc  = (cnd.party === 'R' || cnd.party === 'Republican') ? 'r'
                 : (cnd.party === 'D' || cnd.party === 'Democrat')   ? 'd' : 'i';
@@ -2092,21 +2109,6 @@ window.addEventListener('load', function() {
   refreshElectionData(false);
 });
 
-</script>>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-</body>
-</html>
+</script>
